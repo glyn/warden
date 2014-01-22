@@ -207,6 +207,10 @@ describe "linux", :platform => "linux", :needs_root => true do
         File.read(File.join("/tmp/warden/cgroup/memory", "instance-#{@handle}", file)).to_i
       end
 
+      def swap_factor(lim)
+        lim * 5 / 4
+      end
+
       let(:hundred_mb) { 100 * 1024 * 1024 }
 
       before do
@@ -219,7 +223,7 @@ describe "linux", :platform => "linux", :needs_root => true do
       end
 
       it "sets `memory.memsw.limit_in_bytes`" do
-        integer_from_memory_cgroup("memory.memsw.limit_in_bytes").should == hundred_mb
+        integer_from_memory_cgroup("memory.memsw.limit_in_bytes").should == swap_factor(hundred_mb)
       end
 
       describe "increasing limits" do
@@ -233,7 +237,7 @@ describe "linux", :platform => "linux", :needs_root => true do
         end
 
         it "sets `memory.memsw.limit_in_bytes`" do
-          integer_from_memory_cgroup("memory.memsw.limit_in_bytes").should == 2 * hundred_mb
+          integer_from_memory_cgroup("memory.memsw.limit_in_bytes").should == swap_factor(2 * hundred_mb)
         end
       end
     end

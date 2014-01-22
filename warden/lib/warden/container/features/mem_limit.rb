@@ -105,15 +105,21 @@ module Warden
           # hold. However, one of the two fields will always be set
           # successfully. To mitigate this, both limits are written twice.
           2.times do
-            ["memory.limit_in_bytes", "memory.memsw.limit_in_bytes"].each do |path|
-              File.open(File.join(cgroup_path(:memory), path), 'w') do |f|
-                f.write(limit_in_bytes.to_s)
-              end
-            end
+            set_memory_limit(limit_in_bytes, "memory.limit_in_bytes")
+            # Allow 25% extra swap before oom killer kicks in.
+            set_memory_limit(limit_in_bytes * 5 / 4, "memory.memsw.limit_in_bytes")
           end
         end
 
         private :limit_memory
+
+        def set_memory_limit(limit, path)
+          File.open(File.join(cgroup_path(:memory), path), 'w') do |f|
+            f.write(limit.to_s)
+          end
+        end
+
+        private :set_memory_limit
 
         def do_limit_memory(request, response)
           if request.limit_in_bytes
