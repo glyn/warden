@@ -105,6 +105,7 @@ module Warden
           # hold. However, one of the two fields will always be set
           # successfully. To mitigate this, both limits are written twice.
           2.times do
+            logger.info "glyn: limit_memory setting memory.limit_in_bytes to #{limit_in_bytes} and memory.memsw.limit_in_bytes to #{limit_in_bytes * 5 / 4}"
             set_memory_limit(limit_in_bytes, "memory.limit_in_bytes")
             # Allow 25% extra swap before oom killer kicks in.
             set_memory_limit(limit_in_bytes * 5 / 4, "memory.memsw.limit_in_bytes")
@@ -133,6 +134,8 @@ module Warden
           end
 
           limit_in_bytes = File.read(File.join(cgroup_path(:memory), "memory.limit_in_bytes"))
+          limit_plus_swap_in_bytes = File.read(File.join(cgroup_path(:memory), "memory.memsw.limit_in_bytes"))
+          logger.info "glyn: do_limit_memory result: memory.limit_in_bytes=#{limit_in_bytes}, memory.memsw.limit_in_bytes=#{limit_plus_swap_in_bytes}"
           response.limit_in_bytes = limit_in_bytes.to_i
 
           nil
