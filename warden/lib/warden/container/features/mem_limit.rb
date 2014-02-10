@@ -20,9 +20,12 @@ module Warden
 
           def initialize(container)
             @container = container
+            @memory_cgroup_path = @container.cgroup_path(:memory)
+
+            oom_killer false
 
             oom_notifier_path = Warden::Util.path("src/oom/oom")
-            @child = DeferredChild.new(oom_notifier_path, container.cgroup_path(:memory))
+            @child = DeferredChild.new(oom_notifier_path, @memory_cgroup_path)
             @child.logger = logger
             @child.run
             @child_exited = false
@@ -65,13 +68,25 @@ module Warden
         end
 
         def oomed
-          logger.warn("OOM happened for #{handle}")
+          memory_stats = File.read(File.join(@memory_cgroup_path, "memory.stat"))
+          logger.warn("OOM happened for #{handle}, memory.stat: #{memory_stats}")
 
           events << "out of memory"
+
+          oom_killer true
+
           if state == State::Active
             dispatch(Protocol::StopRequest.new)
           end
         end
+
+        def oom_killer(enable)
+          File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
+            f.write(enable ? '0' : '1')
+          end
+        end
+
+        private :oom_killer
 
         def start_oom_notifier_if_needed
           unless @oom_notifier
@@ -106,7 +121,7 @@ module Warden
           # successfully. To mitigate this, both limits are written twice.
           2.times do
             ["memory.limit_in_bytes", "memory.memsw.limit_in_bytes"].each do |path|
-              File.open(File.join(cgroup_path(:memory), path), 'w') do |f|
+              File.open(File.join(@memory_cgroup_path, path), 'w') do |f|
                 f.write(limit_in_bytes.to_s)
               end
             end
@@ -126,7 +141,7 @@ module Warden
             end
           end
 
-          limit_in_bytes = File.read(File.join(cgroup_path(:memory), "memory.limit_in_bytes"))
+          limit_in_bytes = File.read(File.join(@memory_cgroup_path, "memory.limit_in_bytes"))
           response.limit_in_bytes = limit_in_bytes.to_i
 
           nil
