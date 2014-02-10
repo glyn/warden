@@ -84,11 +84,6 @@ module Warden
           end
         end
 
-
-        File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
-          f.write(:oom_killer ? '0' : '1')
-        end
-
         def start_oom_notifier_if_needed
           unless @oom_notifier
             @oom_notifier = OomNotifier.new(self)
