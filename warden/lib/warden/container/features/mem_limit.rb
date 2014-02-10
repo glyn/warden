@@ -22,7 +22,9 @@ module Warden
             @container = container
             @memory_cgroup_path = @container.cgroup_path(:memory)
 
-            oom_killer(false)
+            File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
+              f.write(false ? '0' : '1')
+            end
 
             oom_notifier_path = Warden::Util.path("src/oom/oom")
             @child = DeferredChild.new(oom_notifier_path, @memory_cgroup_path)
@@ -73,20 +75,19 @@ module Warden
 
           events << "out of memory"
 
-          oom_killer(true)
+          File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
+            f.write(true ? '0' : '1')
+          end
 
           if state == State::Active
             dispatch(Protocol::StopRequest.new)
           end
         end
 
-        def oom_killer(enable)
-          File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
-            f.write(enable ? '0' : '1')
-          end
-        end
 
-        private :oom_killer
+        File.open(File.join(@memory_cgroup_path, "memory.oom_control"), 'w') do |f|
+          f.write(:oom_killer ? '0' : '1')
+        end
 
         def start_oom_notifier_if_needed
           unless @oom_notifier
