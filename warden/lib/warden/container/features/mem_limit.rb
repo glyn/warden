@@ -22,7 +22,7 @@ module Warden
             @container = container
             @memory_cgroup_path = @container.cgroup_path(:memory)
 
-            oom_killer false
+            oom_killer(false)
 
             oom_notifier_path = Warden::Util.path("src/oom/oom")
             @child = DeferredChild.new(oom_notifier_path, @memory_cgroup_path)
@@ -73,7 +73,7 @@ module Warden
 
           events << "out of memory"
 
-          oom_killer true
+          oom_killer(true)
 
           if state == State::Active
             dispatch(Protocol::StopRequest.new)
