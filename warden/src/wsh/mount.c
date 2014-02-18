@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 #include "mount.h"
 

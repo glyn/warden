@@ -123,6 +123,8 @@ static int muxer_catchup_sink(const muxer_t *muxer, int sink_fd) {
   return hup;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 static void muxer_write_to_sinks(muxer_t *muxer, uint8_t *data, size_t count) {
   muxer_sink_t *cur = NULL;
   muxer_sink_t *prev = NULL;
@@ -156,6 +158,7 @@ static void muxer_write_to_sinks(muxer_t *muxer, uint8_t *data, size_t count) {
 
   DLOG("done writing to sinks");
 }
+#pragma GCC diagnostic pop
 
 /**
  * Reads as many bytes as available from the source and writes the data to the
